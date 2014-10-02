@@ -21,13 +21,14 @@ function IMAPSettingsDetector(config){
     this.redisClient = redis.createClient(config.redis.port, config.redis.host);
 }
 
-IMAPSettingsDetector.prototype.detect = function(address, password, cached, callback){
+IMAPSettingsDetector.prototype.detect = function(address, secret, cached, callback){
     var args = Array.prototype.slice.call(arguments);
 
     callback = args.pop();
-    address = (args.shift() || "").toString();
-    password = (args.shift() || "").toString();
-    cached = !!args.shift();
+
+    address = args[0];
+    secret = args[1] || "";
+    cached = args[2];
 
     var cacheKey = "cache:autoconfig:"+sha1(address.split("@")[1] || "localhost");
 
@@ -49,15 +50,15 @@ IMAPSettingsDetector.prototype.detect = function(address, password, cached, call
                     return callback(null, replies[1]);
                 }
                 //console.log("Cache miss");
-                this._checkSettings(address, password, cacheKey, callback);
+                this._checkSettings(address, secret, cacheKey, callback);
             }).bind(this));
     }else{
-        this._checkSettings(address, password, cacheKey, callback);
+        this._checkSettings(address, secret, cacheKey, callback);
     }
-}
+};
 
-IMAPSettingsDetector.prototype._checkSettings = function(address, password, cacheKey, callback){
-    detect.detectIMAPSettings(address, password, (function(err, settings){
+IMAPSettingsDetector.prototype._checkSettings = function(address, secret, cacheKey, callback){
+    detect.detectIMAPSettings(address, secret, (function(err, settings){
         
         if(err){
             return callback(err);
@@ -81,7 +82,7 @@ IMAPSettingsDetector.prototype._checkSettings = function(address, password, cach
         }
 
     }).bind(this));
-}
+};
 
 
 function sha1(str){
